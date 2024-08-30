@@ -34,48 +34,6 @@ public class BookingService extends CredentialService {
 
   protected static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
-  public String[] getCurrentBookings(String id) throws GeneralSecurityException, IOException {
-
-    final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-
-    Calendar service =
-            new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                    .setApplicationName("Rental Website Testing")
-                    .build();
-
-    List<Event> items = getEventList(id, service);
-    if(items.isEmpty()) {
-      return new String[0];
-    }
-    ArrayList<String> bookedDays = new ArrayList<>();
-
-    for(Event event : items) {
-      String startDate = "";
-      String endDate = "";
-      if(event.getStart().getDateTime() != null) {
-        startDate = dateTimeToDateString(event.getStart().getDateTime());
-
-        endDate = dateTimeToDateString(event.getEnd().getDateTime());
-      }
-      else {
-        startDate = reorderDate(event.getStart().getDate().toString());
-
-        endDate = reorderDate(event.getEnd().getDate().toString());
-      }
-      Date start = stringToDate(startDate);
-      Date end = stringToDate(endDate);
-
-      while (start.before(end)) {
-        String date = dateTimeToDateString(new DateTime(start));
-        bookedDays.add(date);
-        start.setDate(start.getDate() + 1);
-      }
-      bookedDays.add(endDate);
-    }
-    String[] finalDateList = new String[bookedDays.size()];
-    return bookedDays.toArray(finalDateList);
-  }
-
   public ArrayList<Event> getEventList(String id, Calendar service) {
     ArrayList<Event> eventList = new ArrayList<>();
 
@@ -131,30 +89,46 @@ public class BookingService extends CredentialService {
     return eventList;
   }
 
-  public static String dateTimeToDateString(DateTime dateTime) {
-    StringBuilder dateString = new StringBuilder();
-    dateString.append(dateTime.toString());
-    return reorderDate(dateString.substring(0,10));
-  }
-  private static String reorderDate(String oldDate) {
-    StringBuilder date = new StringBuilder(oldDate);
-    String year = date.substring(0, 4);
-    date.delete(0, 5);
-    date.append("-" + year);
-    return date.toString();
-  }
+  public String[] getCurrentBookings(String id) throws GeneralSecurityException, IOException {
 
-  public static Date stringToDate(String date) {
-    int year = Integer.parseInt(date.substring(6,10)) - 1900;
-    int month = Integer.parseInt(date.substring(0, 2)) - 1;
-    int day = Integer.parseInt(date.substring(3,5));
+    final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
 
-    return new Date(year, month, day);
-  }
+    Calendar service =
+            new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+                    .setApplicationName("Rental Website Testing")
+                    .build();
 
-  public static int diffInDays(Date startDate, Date endDate) {
-    long diffInMill = Math.abs(endDate.getTime() - startDate.getTime());
-    return (int) TimeUnit.DAYS.convert(diffInMill, TimeUnit.MILLISECONDS);
+    List<Event> items = getEventList(id, service);
+    if(items.isEmpty()) {
+      return new String[0];
+    }
+    ArrayList<String> bookedDays = new ArrayList<>();
+
+    for(Event event : items) {
+      String startDate = "";
+      String endDate = "";
+      if(event.getStart().getDateTime() != null) {
+        startDate = dateTimeToDateString(event.getStart().getDateTime());
+
+        endDate = dateTimeToDateString(event.getEnd().getDateTime());
+      }
+      else {
+        startDate = reorderDate(event.getStart().getDate().toString());
+
+        endDate = reorderDate(event.getEnd().getDate().toString());
+      }
+      Date start = stringToDate(startDate);
+      Date end = stringToDate(endDate);
+
+      while (start.before(end)) {
+        String date = dateTimeToDateString(new DateTime(start));
+        bookedDays.add(date);
+        start.setDate(start.getDate() + 1);
+      }
+      bookedDays.add(endDate);
+    }
+    String[] finalDateList = new String[bookedDays.size()];
+    return bookedDays.toArray(finalDateList);
   }
 
   public PostBookingResult bookDates(String id, PostBookingRequest request) throws GeneralSecurityException, IOException{
@@ -218,5 +192,31 @@ public class BookingService extends CredentialService {
       e.printStackTrace();
       return false;
     }
+  }
+
+  public static String dateTimeToDateString(DateTime dateTime) {
+    StringBuilder dateString = new StringBuilder();
+    dateString.append(dateTime.toString());
+    return reorderDate(dateString.substring(0,10));
+  }
+  private static String reorderDate(String oldDate) {
+    StringBuilder date = new StringBuilder(oldDate);
+    String year = date.substring(0, 4);
+    date.delete(0, 5);
+    date.append("-" + year);
+    return date.toString();
+  }
+
+  public static Date stringToDate(String date) {
+    int year = Integer.parseInt(date.substring(6,10)) - 1900;
+    int month = Integer.parseInt(date.substring(0, 2)) - 1;
+    int day = Integer.parseInt(date.substring(3,5));
+
+    return new Date(year, month, day);
+  }
+
+  public static int diffInDays(Date startDate, Date endDate) {
+    long diffInMill = Math.abs(endDate.getTime() - startDate.getTime());
+    return (int) TimeUnit.DAYS.convert(diffInMill, TimeUnit.MILLISECONDS);
   }
 }
